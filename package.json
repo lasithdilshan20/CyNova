@@ -1,0 +1,59 @@
+{
+  "name": "cynova",
+  "version": "0.1.0",
+  "description": "CyNova – a modern Cypress reporting tool (plugin + web report)",
+  "license": "MIT",
+  "author": "CyNova Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/CyNova.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/CyNova/issues"
+  },
+  "homepage": "https://github.com/your-org/CyNova#readme",
+  "main": "dist/plugin/index.js",
+  "types": "dist/plugin/index.d.ts",
+  "files": [
+    "dist/plugin/**",
+    "dist/web/**",
+    "README.md",
+    "LICENSE"
+  ],
+  "peerDependencies": {
+    "cypress": ">=13"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build:node": "tsc -p tsconfig.node.json",
+    "build:web": "webpack --config webpack.config.js --mode production",
+    "build": "npm run clean && npm run build:node && npm run build:web",
+    "dev:web": "webpack serve --config webpack.config.js --mode development",
+    "lint": "eslint . --ext .ts,.js",
+    "format": "prettier --write .",
+    "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.web.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/cypress": "^1.1.5",
+    "@types/node": "^22.5.5",
+    "@typescript-eslint/eslint-plugin": "^8.6.0",
+    "@typescript-eslint/parser": "^8.6.0",
+    "eslint": "^9.9.0",
+    "eslint-config-prettier": "^9.1.0",
+    "html-webpack-plugin": "^5.6.0",
+    "prettier": "^3.3.3",
+    "rimraf": "^6.0.1",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5",
+    "vite": "^5.4.0",
+    "webpack": "^5.94.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.0.4"
+  }
+}

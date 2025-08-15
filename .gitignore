@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Builds and bundles
+dist/
+coverage/
+.tmp/
+.temp/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor and OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Cypress
+cypress/screenshots/
+cypress/videos/
+.cy-nova/
+reports/
+
+# Env
+.env
+.env.*
