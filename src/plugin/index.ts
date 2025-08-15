@@ -12,6 +12,8 @@ import {
   TestResultNode,
   TimelineEvent,
 } from './types';
+import { computeAnalyticsAndUpdateHistory } from './analytics';
+import { createLiveServer, LiveServer } from './live';
 
 export * from './types';
 
@@ -56,9 +58,11 @@ export function registerCyNova(on: any, config: any, options: CyNovaOptions = {}
     timeline: TimelineEvent[];
     browser?: BrowserInfo;
     extrasBySpec: Map<string, { console: ConsoleLogEntry[]; network: NetworkLogEntry[]; timeline: TimelineEvent[] }>;
+    live?: LiveServer | null;
   } = {
     timeline: [],
     extrasBySpec: new Map(),
+    live: null,
   };
 
   function pushTimeline(ev: TimelineEvent) {
@@ -67,6 +71,9 @@ export function registerCyNova(on: any, config: any, options: CyNovaOptions = {}
       const bucket = ensureSpecExtras(ev.spec);
       bucket.timeline.push(ev);
     }
+    try {
+      state.live?.send({ type: 'timeline', event: ev });
+    } catch {}
   }
 
   function ensureSpecExtras(spec: string) {
@@ -100,6 +107,11 @@ export function registerCyNova(on: any, config: any, options: CyNovaOptions = {}
 
   on('before:run', (details: any) => {
     state.runStartHr = hrNow();
+    // start live server if enabled
+    try {
+      state.live = createLiveServer(options.liveServer);
+      state.live?.send({ type: 'lifecycle', phase: 'before:run', details: { cypressVersion: details?.cypressVersion, at: nowIso() } });
+    } catch {}
     pushTimeline({ type: 'run:start', atMillis: 0 });
     // Add a custom marker with cypress version if present
     const cv = details?.cypressVersion;
@@ -110,12 +122,16 @@ export function registerCyNova(on: any, config: any, options: CyNovaOptions = {}
 
   on('before:spec', (spec: any) => {
     const at = state.runStartHr ? hrDiffMs(state.runStartHr, hrNow()) : 0;
-    pushTimeline({ type: 'spec:start', atMillis: at, spec: spec?.relative ?? spec?.name });
+    const specRel = spec?.relative ?? spec?.name;
+    state.live?.send({ type: 'lifecycle', phase: 'before:spec', spec: specRel, at });
+    pushTimeline({ type: 'spec:start', atMillis: at, spec: specRel });
   });
 
   on('after:spec', (spec: any) => {
     const at = state.runStartHr ? hrDiffMs(state.runStartHr, hrNow()) : 0;
-    pushTimeline({ type: 'spec:end', atMillis: at, spec: spec?.relative ?? spec?.name });
+    const specRel = spec?.relative ?? spec?.name;
+    state.live?.send({ type: 'lifecycle', phase: 'after:spec', spec: specRel, at });
+    pushTimeline({ type: 'spec:end', atMillis: at, spec: specRel });
   });
 
   on('task', {
@@ -125,6 +141,7 @@ export function registerCyNova(on: any, config: any, options: CyNovaOptions = {}
         const at = state.runStartHr ? hrDiffMs(state.runStartHr, hrNow()) : undefined;
         const item: ConsoleLogEntry = { ...entry, atMillis: entry.atMillis ?? at };
         ensureSpecExtras(spec).console.push(item);
+        state.live?.send({ type: 'task', task: 'cynova:console', entry: { ...item, spec } });
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error('[CyNova] Failed to record console log', err);
@@ -137,6 +154,7 @@ export function registerCyNova(on: any, config: any, options: CyNovaOptions = {}
         const at = state.runStartHr ? hrDiffMs(state.runStartHr, hrNow()) : undefined;
         const item: NetworkLogEntry = { ...entry, atMillis: entry.atMillis ?? at };
         ensureSpecExtras(spec).network.push(item);
+        state.live?.send({ type: 'task', task: 'cynova:network', entry: { ...item, spec } });
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error('[CyNova] Failed to record network log', err);
@@ -255,12 +273,21 @@ export function registerCyNova(on: any, config: any, options: CyNovaOptions = {}
 
       if (specs.length) run.specs = specs;
 
+      // Compute analytics and update history (optional advanced features)
+      try {
+        run.analytics = computeAnalyticsAndUpdateHistory(run, outputDir);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('[CyNova] Analytics computation skipped:', (e as any)?.message || e);
+      }
+
       const dir = path.resolve(process.cwd(), outputDir);
       fs.mkdirSync(dir, { recursive: true });
       const filePath = path.join(dir, fileName);
       fs.writeFileSync(filePath, JSON.stringify(run, null, 2), 'utf-8');
       // eslint-disable-next-line no-console
       console.log(`[CyNova] Wrote summary to ${filePath}`);
+      try { state.live?.send({ type: 'summary', run }); } catch {}
 
       // Optionally generate a single-file HTML report with embedded CSS/JS
       const shouldGenHtml = options.generateHtml !== false;
@@ -283,12 +310,14 @@ export function registerCyNova(on: any, config: any, options: CyNovaOptions = {}
             });
         } catch (e) {
           // eslint-disable-next-line no-console
-          console.warn('[CyNova] HTML report generation skipped:', e?.message || e);
+          console.warn('[CyNova] HTML report generation skipped:', (e as any)?.message || e);
         }
       }
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('[CyNova] Failed to write summary:', err);
+    } finally {
+      try { state.live?.close(); } catch {}
     }
   });
 

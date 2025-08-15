@@ -46,7 +46,7 @@ describe('CyNova HTML report generation', () => {
     afterRun?.(fakeResults);
 
     // wait briefly for async dynamic import + generation
-    await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 200));
 
     const jsonPath = path.join(tmpDir, 'cynova-summary.json');
     const htmlPath = path.join(tmpDir, 'cynova-report.html');

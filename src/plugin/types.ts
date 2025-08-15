@@ -70,6 +70,78 @@ export interface PerformanceMetrics {
   pluginOverheadMs?: Millis; // optional estimate of plugin processing
 }
 
+// --- Analytics Types ---
+export interface FlakyTestInsight {
+  testId: string;
+  specRelative: string;
+  displayTitle?: string;
+  passCount: number;
+  failCount: number;
+  totalRuns: number;
+  flakyScore: number; // 0..1 where closer to 1 means more flaky
+}
+
+export interface DurationOutlierInsight {
+  testId: string;
+  specRelative: string;
+  displayTitle?: string;
+  durationMs: Millis;
+  zScore?: number;
+}
+
+export interface TrendSeriesPoint {
+  runIndex: number; // 0-based index in history
+  value: number;
+  timestamp?: string; // ISO
+}
+
+export interface TrendsInsight {
+  totalDurationMs: TrendSeriesPoint[];
+  specDurationMs: Record<string, TrendSeriesPoint[]>; // by specRelative
+  passRatePct?: TrendSeriesPoint[];
+}
+
+export interface CrossBrowserStats {
+  [browserName: string]: {
+    runs: number;
+    avgDurationMs?: number;
+    passed: number;
+    failed: number;
+  };
+}
+
+export interface DependencyGraphInsight {
+  graph: Record<string, string[]>; // specRelative -> dependency paths (relative/absolute)
+}
+
+export interface ScreenshotDiffInsight {
+  testId: string;
+  specRelative: string;
+  baselinePath?: string;
+  comparePath?: string;
+  diffImagePath?: string;
+  totalPixels?: number;
+  diffPixels?: number;
+  diffRatio?: number;
+  status: 'computed' | 'skipped' | 'error';
+  errorMessage?: string;
+}
+
+export interface CyNovaAnalytics {
+  flakyTests?: FlakyTestInsight[];
+  durationOutliers?: DurationOutlierInsight[];
+  trends?: TrendsInsight;
+  crossBrowser?: CrossBrowserStats;
+  dependencies?: DependencyGraphInsight;
+  screenshotDiffs?: ScreenshotDiffInsight[];
+}
+
+export interface LiveServerOptions {
+  enabled?: boolean; // default false
+  host?: string; // default 127.0.0.1
+  port?: number; // default 9777
+}
+
 export interface TestAttempt {
   attempt: number;
   state?: 'passed' | 'failed' | 'pending' | 'skipped' | 'unknown';
@@ -126,6 +198,7 @@ export interface CyNovaRun {
   specs?: SpecResult[];
   timeline?: TimelineEvent[];
   performance?: PerformanceMetrics;
+  analytics?: CyNovaAnalytics;
 }
 
 export interface CyNovaOptions {
@@ -139,4 +212,6 @@ export interface CyNovaOptions {
   htmlFileName?: string;
   /** Optional custom Handlebars template absolute path. */
   templatePath?: string;
+  /** Live server options for real-time reporting */
+  liveServer?: LiveServerOptions;
 }
