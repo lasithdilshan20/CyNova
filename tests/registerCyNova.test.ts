@@ -25,6 +25,7 @@ describe('registerCyNova', () => {
     const ret = registerCyNova(on as any, config, {
       outputDir: path.relative(process.cwd(), tmpDir),
       fileName: 'cynova-summary.json',
+      generateHtml: false,
     });
 
     expect(ret).toBe(config);
