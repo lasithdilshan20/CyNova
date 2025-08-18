@@ -155,3 +155,14 @@ body {
   .cn-actions, .cn-controls { display: none !important; }
   .glass { box-shadow: none; backdrop-filter: none; }
 }
+
+/* Media and overlay additions */
+.test-actions { display: inline-flex; gap: 8px; align-items: center; }
+
+.cn-overlay-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 9999; }
+.cn-overlay { max-width: 90vw; max-height: 90vh; overflow: auto; background: var(--bg-glass); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid rgba(255,255,255,0.08); }
+.cn-overlay .cn-ov-h { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.cn-overlay .cn-ov-b { padding: 12px; }
+.media-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.media-grid img, .media-grid video { width: 100%; height: auto; border-radius: var(--radius-sm); box-shadow: var(--ring); background: #000; }
+.cn-overlay-close { cursor: pointer; }

@@ -319,6 +319,66 @@
     applyFilter();
   })();
 
+  // Media overlay lazy loader
+  (function setupMediaOverlay(){
+    function collectMedia(specRel, testId){
+      const out = [];
+      try {
+        const specs = (data && data.specs) || [];
+        const s = specs.find((sp) => sp.specRelative === specRel);
+        if (!s) return out;
+        const seen = new Set();
+        // test-level attempts
+        const t = (s.tests || []).find((x) => x.id === testId);
+        if (t) {
+          (t.attempts || []).forEach((a) => {
+            (a.screenshots || []).forEach((sc) => { if (sc && sc.path && !seen.has(sc.path)) { seen.add(sc.path); out.push({ type: 'img', path: sc.path }); } });
+            (a.videos || []).forEach((v) => { if (v && v.path && !seen.has(v.path)) { seen.add(v.path); out.push({ type: 'video', path: v.path }); } });
+          });
+        }
+        // spec-level fallbacks
+        (s.screenshots || []).forEach((sc) => { if (sc && sc.path && !seen.has(sc.path)) { seen.add(sc.path); out.push({ type: 'img', path: sc.path }); } });
+        if (s.video && s.video.path && !seen.has(s.video.path)) { seen.add(s.video.path); out.push({ type: 'video', path: s.video.path }); }
+      } catch {}
+      return out;
+    }
+    function openOverlay(items){
+      const backdrop = document.createElement('div'); backdrop.className = 'cn-overlay-backdrop';
+      const ov = document.createElement('div'); ov.className = 'cn-overlay glass';
+      const header = document.createElement('div'); header.className = 'cn-ov-h';
+      const title = document.createElement('div'); title.textContent = 'Media';
+      const close = document.createElement('button'); close.className = 'btn neumorph cn-overlay-close'; close.textContent = 'Close';
+      close.addEventListener('click', () => document.body.removeChild(backdrop));
+      header.appendChild(title); header.appendChild(close);
+      const body = document.createElement('div'); body.className = 'cn-ov-b';
+      const grid = document.createElement('div'); grid.className = 'media-grid';
+      if (!items.length) { const p = document.createElement('p'); p.className='muted'; p.textContent = 'No media found for this test.'; body.appendChild(p); }
+      items.forEach((it) => {
+        let el;
+        if (it.type === 'img') { el = document.createElement('img'); el.loading = 'lazy'; el.alt = 'screenshot'; el.src = it.path; }
+        else { el = document.createElement('video'); el.controls = true; el.preload = 'metadata'; const src = document.createElement('source'); src.src = it.path; el.appendChild(src); }
+        grid.appendChild(el);
+      });
+      body.appendChild(grid);
+      ov.appendChild(header); ov.appendChild(body);
+      backdrop.appendChild(ov);
+      backdrop.addEventListener('click', (e) => { if (e.target === backdrop) { try { document.body.removeChild(backdrop); } catch {} } });
+      document.body.appendChild(backdrop);
+    }
+    document.addEventListener('click', (e) => {
+      const t = /** @type {HTMLElement} */(e.target);
+      const btn = t && t.closest && t.closest('.media-btn');
+      if (!btn) return;
+      const testEl = btn.closest('.test');
+      const specEl = btn.closest('.spec');
+      const testId = testEl && testEl.getAttribute('data-test-id');
+      const specRel = specEl && specEl.getAttribute('data-spec');
+      if (!testId || !specRel) return;
+      const items = collectMedia(specRel, testId);
+      openOverlay(items);
+    });
+  })();
+
   // Additional charts
   try {
     if (window.Chart && data) {

@@ -12,6 +12,16 @@ function makeNoop(): LiveServer {
   };
 }
 
+/**
+ * Create a lightweight WebSocket broadcast server for live reporting.
+ *
+ * When enabled, the server emits lifecycle, timeline, task, and summary
+ * messages to connected clients (e.g., the HTML report opened with ?live=1).
+ * If the optional `ws` dependency is not available, a noop server is returned.
+ *
+ * @param opts - LiveServerOptions (enabled flag, host, port).
+ * @returns LiveServer instance or null if not enabled.
+ */
 export function createLiveServer(opts?: LiveServerOptions): LiveServer | null {
   if (!opts?.enabled) return null;
   const host = opts.host || '127.0.0.1';

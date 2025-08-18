@@ -1,0 +1,41 @@
+name: E2E with CyNova (Example)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  cypress:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, edge]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Run Cypress (${{ matrix.browser }})
+        run: npx cypress run --browser ${{ matrix.browser }} --config-file e2e/cypress.config.ts
+
+      - name: Upload CyNova artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cynova-reports-${{ matrix.browser }}
+          path: |
+            reports/cynova-summary.json
+            reports/cynova-report.html
+            reports/cynova-history.json
+          if-no-files-found: warn

@@ -49,6 +49,26 @@ function hrDiffMs(start: bigint, end: bigint): number {
  *     },
  *   });
  */
+/**
+ * Register CyNova in Cypress's setupNodeEvents hook.
+ *
+ * @param on - Cypress event registration function.
+ * @param config - Cypress config object; returned unchanged.
+ * @param options - CyNovaOptions to control output, HTML generation, and live server.
+ * @returns The same Cypress config object passed in.
+ *
+ * Usage:
+ *   import { defineConfig } from 'cypress';
+ *   import { registerCyNova } from 'cynova';
+ *   export default defineConfig({
+ *     e2e: {
+ *       setupNodeEvents(on, config) {
+ *         registerCyNova(on, config, { outputDir: 'reports' });
+ *         return config;
+ *       },
+ *     },
+ *   });
+ */
 export function registerCyNova(on: any, config: any, options: CyNovaOptions = {}) {
   const outputDir = options.outputDir ?? 'reports';
   const fileName = options.fileName ?? 'cynova-summary.json';
@@ -284,7 +304,7 @@ export function registerCyNova(on: any, config: any, options: CyNovaOptions = {}
       const dir = path.resolve(process.cwd(), outputDir);
       fs.mkdirSync(dir, { recursive: true });
       const filePath = path.join(dir, fileName);
-      fs.writeFileSync(filePath, JSON.stringify(run, null, 2), 'utf-8');
+      fs.writeFileSync(filePath, JSON.stringify(run), 'utf-8');
       // eslint-disable-next-line no-console
       console.log(`[CyNova] Wrote summary to ${filePath}`);
       try { state.live?.send({ type: 'summary', run }); } catch {}

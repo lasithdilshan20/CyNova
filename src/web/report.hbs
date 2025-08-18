@@ -116,9 +116,12 @@
               </div>
               <ul class="tests">
                 {{#each tests}}
-                <li class="test state-{{state}}" data-state="{{state}}" data-duration="{{wallClockDurationMs}}">
+                <li class="test state-{{state}}" data-state="{{state}}" data-duration="{{wallClockDurationMs}}" data-test-id="{{id}}">
                   <div class="test-title">{{displayTitle}}</div>
-                  <div class="test-state pill">{{state}}</div>
+                  <div class="test-actions">
+                    <button class="btn neumorph media-btn" title="View media" aria-label="View media">Media</button>
+                    <div class="test-state pill">{{state}}</div>
+                  </div>
                 </li>
                 {{/each}}
               </ul>

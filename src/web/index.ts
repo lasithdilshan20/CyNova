@@ -1,3 +1,5 @@
+import './index.css';
+
 const root = document.getElementById('app');
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, text?: string) {

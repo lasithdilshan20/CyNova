@@ -34,7 +34,7 @@ function readHistory(filePath: string): CyNovaHistory {
 
 function writeHistory(filePath: string, history: CyNovaHistory) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, JSON.stringify(history, null, 2), 'utf-8');
+  fs.writeFileSync(filePath, JSON.stringify(history), 'utf-8');
 }
 
 function toHistoryEntry(run: CyNovaRun): HistoryRunEntry {
@@ -223,6 +223,18 @@ function tryScreenshotDiff(run: CyNovaRun, outputDir: string) {
   return insights;
 }
 
+/**
+ * Compute analytics for the given CyNova run and update persistent history.
+ *
+ * The history file (cynova-history.json) is created/updated under outputDir
+ * and is used to compute flaky tests, duration outliers, trends, and
+ * cross‑browser statistics. Optional screenshot diffs are attempted when
+ * pixelmatch and pngjs are available.
+ *
+ * @param run - Current CyNovaRun payload to analyze.
+ * @param outputDir - Directory where history and artifacts are stored.
+ * @returns CyNovaAnalytics insights attached to the run.
+ */
 export function computeAnalyticsAndUpdateHistory(run: CyNovaRun, outputDir: string) {
   const historyPath = path.resolve(process.cwd(), outputDir, 'cynova-history.json');
   const history = readHistory(historyPath);

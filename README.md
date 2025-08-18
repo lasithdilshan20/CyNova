@@ -111,3 +111,30 @@ GitHub Actions workflow (`.github/workflows/ci.yml`) runs on pushes/PRs to main/
 ## License
 
 MIT © CyNova Contributors
+
+## Documentation
+
+- API Reference: docs/API.md
+- Migration from Mochawesome: docs/MIGRATION.md
+- Troubleshooting & FAQ: docs/TROUBLESHOOTING.md
+- Contributing Guidelines: docs/CONTRIBUTING.md
+- Changelog: docs/CHANGELOG.md
+
+## Examples
+
+Explore example setups under examples/:
+
+- Basic: examples/basic
+  - Minimal Cypress integration with default settings.
+- Advanced: examples/advanced
+  - Live updates via WebSocket and a custom Handlebars template.
+- Custom Theme: examples/custom-theme
+  - Starter custom template (cynova-custom.hbs) with CSS variable overrides.
+- CI/CD Pipeline: examples/ci-cd
+  - Sample GitHub Actions workflow to run Cypress and upload CyNova artifacts.
+- Multi-browser: examples/multi-browser
+  - Commands and GA matrix snippet for running across Chrome/Edge/Firefox.
+- Performance: examples/perf
+  - Tips and scripts for large suites and benchmarking.
+
+Open each folder’s README for instructions.

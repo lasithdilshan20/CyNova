@@ -27,8 +27,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Test
+      - name: Test (Vitest)
         run: npm test
+
+      - name: Test (Jest)
+        run: npm run test:jest
 
       - name: Build
         run: npm run build

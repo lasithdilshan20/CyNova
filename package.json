@@ -6,12 +6,12 @@
   "author": "CyNova Contributors",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/CyNova.git"
+    "url": "https://github.com/lasithdilshan20/CyNova.git"
   },
   "bugs": {
-    "url": "https://github.com/your-org/CyNova/issues"
+    "url": "https://github.com/lasithdilshan20/CyNova/issues"
   },
-  "homepage": "https://github.com/your-org/CyNova#readme",
+  "homepage": "https://github.com/lasithdilshan20/CyNova#readme",
   "main": "dist/plugin/index.js",
   "types": "dist/plugin/index.d.ts",
   "files": [
@@ -36,7 +36,11 @@
     "format": "prettier --write .",
     "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.web.json --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:jest": "jest -c jest.config.js --passWithNoTests",
+    "test:all": "npm run test && npm run test:jest",
+    "test:e2e": "cypress run --config-file e2e\\cypress.config.ts",
+    "test:e2e:open": "cypress open --config-file e2e\\cypress.config.ts"
   },
   "dependencies": {
     "chart.js": "^4.4.3",
@@ -44,19 +48,30 @@
   },
   "devDependencies": {
     "@types/cypress": "^1.1.5",
-    "@types/node": "^22.5.5",
     "@types/handlebars": "^4.1.0",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^22.5.5",
     "@typescript-eslint/eslint-plugin": "^8.6.0",
     "@typescript-eslint/parser": "^8.6.0",
+    "autoprefixer": "^10.4.20",
+    "compression-webpack-plugin": "^11.1.0",
+    "css-loader": "^6.9.1",
+    "css-minimizer-webpack-plugin": "^7.0.0",
+    "cypress": "^13.13.0",
     "eslint": "^9.9.0",
     "eslint-config-prettier": "^9.1.0",
     "html-webpack-plugin": "^5.6.0",
+    "jest": "^29.7.0",
+    "mini-css-extract-plugin": "^2.9.1",
+    "postcss": "^8.4.44",
+    "postcss-loader": "^8.1.1",
     "prettier": "^3.3.3",
     "rimraf": "^6.0.1",
+    "ts-jest": "^29.2.4",
     "ts-loader": "^9.5.1",
     "typescript": "^5.5.4",
-    "vitest": "^2.0.5",
     "vite": "^5.4.0",
+    "vitest": "^2.0.5",
     "webpack": "^5.94.0",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.0.4"

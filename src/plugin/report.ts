@@ -25,10 +25,10 @@ function defaultTemplatePath(): string {
 }
 
 function loadChartJsUmd(): string {
-  // Try node_modules first
+  // Try node_modules first (prefer minified)
   const candidates = [
-    path.resolve(process.cwd(), 'node_modules', 'chart.js', 'dist', 'chart.umd.js'),
     path.resolve(process.cwd(), 'node_modules', 'chart.js', 'dist', 'chart.umd.min.js'),
+    path.resolve(process.cwd(), 'node_modules', 'chart.js', 'dist', 'chart.umd.js'),
   ];
   for (const c of candidates) {
     const contents = readFileSafe(c);
@@ -38,6 +38,43 @@ function loadChartJsUmd(): string {
   return 'window.Chart = window.Chart || function(){};';
 }
 
+function minifyCss(css: string): string {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const csso = require('csso');
+    return csso.minify(css).css || css;
+  } catch {
+    // fallback: strip comments and collapse whitespace conservatively
+    try {
+      const noComments = css.replace(/\/\*[^!*][\s\S]*?\*\//g, '');
+      return noComments.replace(/\s+/g, ' ').trim();
+    } catch {
+      return css;
+    }
+  }
+}
+
+function minifyInlineJs(js: string): string {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const terser = require('terser');
+    const res = terser.minify(js, { compress: false, mangle: false });
+    return (res && res.code) || js;
+  } catch {
+    // Safe fallback: leave JS as is to avoid breaking functionality
+    return js;
+  }
+}
+
+/**
+ * Generate a single-file HTML report for a CyNova run.
+ * Embeds CSS/JS and inlines Chart.js when available. Falls back to a minimal
+ * HTML document if Handlebars is unavailable or when CYNOVA_FORCE_FALLBACK=1.
+ *
+ * @param run - The CyNovaRun payload written by the plugin.
+ * @param opts - Output options (directory, file name, optional custom templatePath).
+ * @returns Absolute file path to the generated HTML report.
+ */
 export function generateHtmlReport(run: CyNovaRun, opts: HtmlReportOptions) {
   const outDir = path.resolve(process.cwd(), opts.outputDir);
   const fileName = opts.htmlFileName ?? 'cynova-report.html';
@@ -87,12 +124,16 @@ export function generateHtmlReport(run: CyNovaRun, opts: HtmlReportOptions) {
 <script>{{{inlineJs}}}</script>
 </body></html>`;
 
-  const inlineCss = readFileSafe(cssPath) ?? '';
-  const inlineJs = readFileSafe(jsEnhancePath) ?? '';
+  const inlineCss = minifyCss(readFileSafe(cssPath) ?? '');
+  const inlineJs = minifyInlineJs(readFileSafe(jsEnhancePath) ?? '');
   const chartJs = loadChartJsUmd();
 
   let html: string;
   try {
+    // Allow tests to force fallback path via env flag
+    if (process.env.CYNOVA_FORCE_FALLBACK === '1') {
+      throw new Error('forced');
+    }
     // Lazy require to keep runtime optional if users don't need HTML
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Handlebars = require('handlebars');
