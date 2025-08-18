@@ -51,27 +51,27 @@
       const ctx = document.getElementById('cn-summary-chart');
       if (ctx) {
         new window.Chart(ctx, {
-          type: 'bar',
+          type: 'doughnut',
           data: {
             labels: ['Passed', 'Failed', 'Pending', 'Skipped'],
             datasets: [
               {
                 label: 'Tests',
                 data: [data.totals.passed || 0, data.totals.failed || 0, data.totals.pending || 0, data.totals.skipped || 0],
-                backgroundColor: ['#27d17f', '#ff6b6b', '#f7b955', '#9c9c9c'],
-                borderWidth: 0,
+                backgroundColor: ['#12f0a1', '#ff5c8a', '#ffd166', '#9aa0aa'],
+                borderColor: ['rgba(18,240,161,0.6)','rgba(255,92,138,0.6)','rgba(255,209,102,0.6)','rgba(154,160,170,0.6)'],
+                borderWidth: 2,
+                hoverOffset: 8,
               },
             ],
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-              x: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted') } },
-              y: { beginAtZero: true, ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted') } },
-            },
+            cutout: '60%',
             plugins: {
               legend: { labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted') } },
+              tooltip: { enabled: true },
             },
           },
         });
@@ -457,5 +457,173 @@
       }
     }
   } catch {}
+
+  // Premium Interactivity Extensions
+  (function premium(){
+    const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Loading overlay + progress bar finalize
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const pb = document.getElementById('cn-progress');
+      if (params.get('live') === '1' || params.get('live') === 'true') {
+        pb && pb.classList.add('indeterminate');
+      }
+      setTimeout(() => {
+        if (!(params.get('live') === '1' || params.get('live') === 'true')) {
+          pb && pb.style.setProperty('--p','100%');
+          const ov = document.getElementById('loadingOverlay'); if (ov && ov.parentElement) ov.parentElement.removeChild(ov);
+        }
+      }, 300);
+      // Observe LIVE badge to end indeterminate when done
+      const badge = document.getElementById('liveBadge');
+      if (badge) {
+        const mo = new MutationObserver(() => {
+          const txt = (badge.textContent||'').toLowerCase();
+          if (txt.includes('done') || txt.includes('off')) {
+            pb && pb.classList.remove('indeterminate');
+            pb && pb.style.setProperty('--p','100%');
+            const ov = document.getElementById('loadingOverlay'); if (ov && ov.parentElement) ov.parentElement.removeChild(ov);
+          }
+        });
+        mo.observe(badge, { childList: true, characterData: true, subtree: true });
+      }
+    } catch {}
+
+    // Timeline scrubber
+    (function setupScrubber(){
+      try {
+        const scrub = /** @type {HTMLInputElement|null} */(document.getElementById('timelineScrubber'));
+        if (!scrub) return;
+        const counter = document.getElementById('tlCount');
+        const tests = Array.from(document.querySelectorAll('.test'));
+        const total = tests.length;
+        scrub.max = String(total);
+        if (!scrub.value) scrub.value = String(total);
+        function applyScrub(){
+          const cut = Number(scrub.value||0);
+          let shown = 0;
+          tests.forEach((el) => {
+            const ord = Number(el.getAttribute('data-order')||0);
+            const show = ord < cut;
+            // do not unhide if other filters hid it; only add additional hide
+            if (show) {
+              el.style.display = '';
+              if (!el.hasAttribute('hidden')) shown++;
+            } else {
+              el.style.display = 'none';
+            }
+          });
+          if (counter) counter.textContent = `${shown}/${total}`;
+          const pb = document.getElementById('cn-progress');
+          if (pb) pb.style.setProperty('--p', `${Math.round((Math.max(1, shown)/Math.max(1,total))*100)}%`);
+        }
+        scrub.addEventListener('input', applyScrub);
+        // Also re-apply after filtering changes
+        const inputs = [document.getElementById('searchBox'), document.getElementById('durMin'), document.getElementById('durMax'), document.getElementById('tagsBox'), document.getElementById('browserSelect')].filter(Boolean);
+        inputs.forEach((n) => n && n.addEventListener('input', applyScrub));
+        document.querySelectorAll('input[name="status"]').forEach((n)=> n.addEventListener('change', applyScrub));
+        applyScrub();
+      } catch {}
+    })();
+
+    // Swipe gestures for specs
+    (function gestures(){
+      try {
+        const list = document.getElementById('specList'); if (!list) return;
+        let sx=0, sy=0, targetSpec=null;
+        list.addEventListener('touchstart', (e)=>{ const t=e.touches[0]; sx=t.clientX; sy=t.clientY; const el = /** @type {HTMLElement} */(e.target); targetSpec = el && el.closest && el.closest('.spec'); }, { passive: true });
+        list.addEventListener('touchend', (e)=>{ if (!targetSpec) return; const t=e.changedTouches[0]; const dx = t.clientX - sx; const dy = t.clientY - sy; if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 30) { targetSpec.setAttribute('data-collapsed', dx < 0 ? '1' : '0'); } targetSpec=null; });
+      } catch {}
+    })();
+
+    // Pinch-to-zoom for chart
+    (function pinchZoom(){
+      try {
+        const wrap = document.getElementById('chartWrap'); if (!wrap) return;
+        let startDist=0, base=1;
+        wrap.addEventListener('touchstart', (e)=>{ if (e.touches.length===2){ const a=e.touches[0], b=e.touches[1]; startDist = Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY); base = Number(wrap.getAttribute('data-scale')||1); } }, { passive: true });
+        wrap.addEventListener('touchmove', (e)=>{ if (e.touches.length===2){ const a=e.touches[0], b=e.touches[1]; const dist = Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY); const scale = Math.max(0.6, Math.min(2.0, base * (dist / (startDist||1)))); wrap.style.transform = `scale(${scale})`; wrap.style.transformOrigin = 'center'; wrap.setAttribute('data-scale', String(scale)); } }, { passive: true });
+      } catch {}
+    })();
+
+    // Constellation network
+    (function constellation(){
+      const canvas = /** @type {HTMLCanvasElement|null} */(document.getElementById('cn-constellation'));
+      const btn = document.getElementById('toggleConstellation');
+      if (!canvas) return;
+      const ctx = canvas.getContext && canvas.getContext('2d');
+      let running = false;
+      function resize(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+      function collectNodes(){
+        const arr = [];
+        document.querySelectorAll('.test').forEach((el)=>{
+          const rect = el.getBoundingClientRect();
+          const x = rect.left + rect.width/2; const y = rect.top + rect.height/2;
+          if (x>=0 && x<=window.innerWidth && y>=0 && y<=window.innerHeight) {
+            arr.push({ x, y, state: el.getAttribute('data-state')||'unknown' });
+          }
+        });
+        return arr;
+      }
+      function draw(){ if (!ctx) return; ctx.clearRect(0,0,canvas.width,canvas.height); const nodes = collectNodes(); const len = nodes.length; for (let i=0;i<len;i++){ const a=nodes[i]; for (let j=i+1;j<Math.min(i+8,len);j++){ const b=nodes[j]; const dx=a.x-b.x, dy=a.y-b.y; const d=Math.hypot(dx,dy); if (d<200 && a.state===b.state){ const alpha = 1 - (d/200); ctx.strokeStyle = a.state==='failed' ? `rgba(255,92,138,${0.35*alpha})` : a.state==='passed' ? `rgba(18,240,161,${0.25*alpha})` : `rgba(0,212,255,${0.2*alpha})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); } } ctx.fillStyle = 'rgba(0,212,255,0.6)'; ctx.beginPath(); ctx.arc(a.x,a.y,1.5,0,Math.PI*2); ctx.fill(); }
+        if (running) requestAnimationFrame(draw);
+      }
+      function start(){ if (running) return; running=true; canvas.style.opacity='0.6'; resize(); draw(); }
+      function stop(){ running=false; canvas.style.opacity='0'; if (ctx) ctx.clearRect(0,0,canvas.width,canvas.height); }
+      window.addEventListener('resize', resize);
+      window.addEventListener('scroll', ()=>{ if (running) { /* trigger redraw next frame */ } });
+      if (btn) btn.addEventListener('click', ()=>{ if (running) stop(); else start(); });
+    })();
+
+    // Custom cursor + trails
+    (function cursor(){
+      try {
+        const dot = document.getElementById('cursorDot'); if (!dot) return;
+        if (prefersReduced) { dot.style.display='none'; return; }
+        document.addEventListener('mousemove', (e)=>{
+          dot.style.left = e.clientX + 'px'; dot.style.top = e.clientY + 'px';
+          const tr = document.createElement('div'); tr.className='cursor-trail'; tr.style.left = e.clientX + 'px'; tr.style.top = e.clientY + 'px';
+          document.body.appendChild(tr); setTimeout(()=>{ try { document.body.removeChild(tr);} catch {} }, 600);
+        });
+      } catch {}
+    })();
+
+    // AR-style HUD on test hover
+    (function hud(){
+      let hudEl = null;
+      function show(e, el){
+        if (!hudEl) { hudEl = document.createElement('div'); hudEl.className='hud'; document.body.appendChild(hudEl); }
+        const title = (el.querySelector('.test-title')||{}).textContent || '';
+        const state = el.getAttribute('data-state')||'';
+        const dur = el.getAttribute('data-duration')||'';
+        hudEl.textContent = `${state.toUpperCase()} • ${dur}ms • ${title}`;
+        hudEl.style.left = (e.clientX + 12) + 'px'; hudEl.style.top = (e.clientY + 12) + 'px';
+      }
+      document.addEventListener('mousemove', (e)=>{ const t = /** @type {HTMLElement} */(e.target); const test = t && t.closest && t.closest('.test'); if (test) show(e, test); else if (hudEl) { try { document.body.removeChild(hudEl); } catch {} hudEl=null; } });
+    })();
+
+    // Voice commands (optional)
+    (function voice(){
+      try {
+        const btn = document.getElementById('micBtn'); if (!btn) return;
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SpeechRec) { btn.setAttribute('disabled','true'); btn.textContent = 'Mic N/A'; return; }
+        let rec = null; let active=false;
+        function start(){ if (active) return; rec = new SpeechRec(); rec.lang='en-US'; rec.continuous=true; rec.interimResults=false; rec.onresult=(ev)=>{ const res = ev.results[ev.results.length-1][0].transcript.toLowerCase().trim(); handle(res); }; rec.onend=()=>{ if (active) rec.start(); }; rec.start(); active=true; btn.textContent='Mic On'; }
+        function stop(){ if (!active) return; try { rec && rec.stop(); } catch {} active=false; btn.textContent='Mic'; }
+        function handle(cmd){ try {
+          if (cmd.startsWith('search ')) { const q = cmd.slice(7); const sb = document.getElementById('searchBox'); if (sb) { sb.value = q; } applyFilter && applyFilter(); }
+          else if (cmd.includes('expand all')) { const b = document.getElementById('expandAll'); b && b.click(); }
+          else if (cmd.includes('collapse all')) { const b = document.getElementById('collapseAll'); b && b.click(); }
+          else if (cmd.includes('filter passed')) { const r = document.querySelector('input[name="status"][value="passed"]'); if (r) { r.checked=true; } applyFilter && applyFilter(); }
+          else if (cmd.includes('filter failed')) { const r = document.querySelector('input[name="status"][value="failed"]'); if (r) { r.checked=true; } applyFilter && applyFilter(); }
+          else if (cmd.includes('filter all')) { const r = document.querySelector('input[name="status"][value="all"]'); if (r) { r.checked=true; } applyFilter && applyFilter(); }
+          else if (cmd.includes('print')) { try { window.print(); } catch {} }
+        } catch {}
+        }
+        btn.addEventListener('click', ()=>{ if (active) stop(); else start(); });
+      } catch {}
+    })();
+  })();
 
 })();
