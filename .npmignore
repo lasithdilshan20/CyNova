@@ -1,0 +1,25 @@
+# Exclude everything except what we explicitly include via files array
+# This is a safety net; the files array already whitelists dist/, templates/, README.md, LICENSE
+*
+
+# But keep these root files if npm happens to consult this file
+!dist/**
+!templates/**
+!README.md
+!LICENSE
+
+# Always exclude dev and build artifacts
+node_modules/
+.tmp/
+coverage/
+cypress/
+e2e/
+examples/
+docs/
+src/
+.github/
+.vscode/
+.idea/
+.eslint* 
+.prettier*
+*.log

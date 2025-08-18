@@ -20,8 +20,12 @@ function readFileSafe(p: string): string | undefined {
 }
 
 function defaultTemplatePath(): string {
-  // use a repo-relative template when running in dev; fallback to built-in minimal template
-  return path.resolve(process.cwd(), 'src', 'web', 'report.hbs');
+  // Prefer a project template during development; otherwise use packaged template
+  const devPath = path.resolve(process.cwd(), 'src', 'web', 'report.hbs');
+  if (fs.existsSync(devPath)) return devPath;
+  // When installed from npm, templates are shipped under packageRoot/templates
+  const packaged = path.resolve(__dirname, '..', '..', 'templates', 'report.hbs');
+  return packaged;
 }
 
 function loadChartJsUmd(): string {
@@ -80,8 +84,12 @@ export function generateHtmlReport(run: CyNovaRun, opts: HtmlReportOptions) {
   const fileName = opts.htmlFileName ?? 'cynova-report.html';
   const templatePath = opts.templatePath ?? defaultTemplatePath();
 
-  const cssPath = path.resolve(process.cwd(), 'src', 'web', 'report.css');
-  const jsEnhancePath = path.resolve(process.cwd(), 'src', 'web', 'enhance.js');
+  const devCss = path.resolve(process.cwd(), 'src', 'web', 'report.css');
+  const devEnhance = path.resolve(process.cwd(), 'src', 'web', 'enhance.js');
+  const pkgCss = path.resolve(__dirname, '..', '..', 'templates', 'report.css');
+  const pkgEnhance = path.resolve(__dirname, '..', '..', 'templates', 'enhance.js');
+  const cssPath = fs.existsSync(devCss) ? devCss : pkgCss;
+  const jsEnhancePath = fs.existsSync(devEnhance) ? devEnhance : pkgEnhance;
 
   const templateSource = readFileSafe(templatePath) ?? `<!doctype html>
 <html lang="en">

@@ -207,7 +207,7 @@ export function registerCyNova(on: any, config: any, options: CyNovaOptions = {}
 
       const run: CyNovaRun = {
         tool: 'CyNova',
-        version: '0.1.0',
+        version: '1.0.0',
         generatedAt: nowIso(),
         projectRoot: results?.projectRoot,
         browser: state.browser,

@@ -1,7 +1,8 @@
 {
   "name": "cynova",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "CyNova – a modern Cypress reporting tool (plugin + web report)",
+  "keywords": ["cypress", "report", "reporter", "testing", "e2e", "html report", "cypress plugin", "cypress reporter", "cynova" ],
   "license": "MIT",
   "author": "CyNova Contributors",
   "repository": {
@@ -13,24 +14,46 @@
   },
   "homepage": "https://github.com/lasithdilshan20/CyNova#readme",
   "main": "dist/plugin/index.js",
+  "module": "dist/plugin-esm/index.js",
   "types": "dist/plugin/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/plugin/index.d.ts",
+      "import": "./dist/plugin-esm/index.js",
+      "require": "./dist/plugin/index.js"
+    },
+    "./report": {
+      "types": "./dist/plugin/report.d.ts",
+      "import": "./dist/plugin-esm/report.js",
+      "require": "./dist/plugin/report.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "report": ["dist/plugin/report.d.ts"],
+      "*": ["dist/plugin/index.d.ts"]
+    }
+  },
   "files": [
-    "dist/plugin/**",
-    "dist/web/**",
+    "dist/**",
+    "templates/**",
     "README.md",
     "LICENSE"
   ],
   "peerDependencies": {
-    "cypress": ">=13"
+    "cypress": ">=10.0.0"
   },
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "clean": "rimraf dist",
+    "clean": "rimraf dist templates .tmp",
     "build:node": "tsc -p tsconfig.node.json",
+    "build:node:esm": "tsc -p tsconfig.node.esm.json",
     "build:web": "webpack --config webpack.config.js --mode production",
-    "build": "npm run clean && npm run build:node && npm run build:web",
+    "build:assets": "node scripts\\copy-assets.cjs",
+    "build": "npm run clean && npm run build:node && npm run build:node:esm && npm run build:web && npm run build:assets",
     "dev:web": "webpack serve --config webpack.config.js --mode development",
     "lint": "eslint . --ext .ts,.js",
     "format": "prettier --write .",
@@ -40,7 +63,9 @@
     "test:jest": "jest -c jest.config.js --passWithNoTests",
     "test:all": "npm run test && npm run test:jest",
     "test:e2e": "cypress run --config-file e2e\\cypress.config.ts",
-    "test:e2e:open": "cypress open --config-file e2e\\cypress.config.ts"
+    "test:e2e:open": "cypress open --config-file e2e\\cypress.config.ts",
+    "prepublishOnly": "npm run typecheck && npm run test:all && npm run build",
+    "release": "standard-version"
   },
   "dependencies": {
     "chart.js": "^4.4.3",
@@ -67,6 +92,7 @@
     "postcss-loader": "^8.1.1",
     "prettier": "^3.3.3",
     "rimraf": "^6.0.1",
+    "standard-version": "^9.5.0",
     "ts-jest": "^29.2.4",
     "ts-loader": "^9.5.1",
     "typescript": "^5.5.4",
