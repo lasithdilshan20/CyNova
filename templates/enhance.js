@@ -50,6 +50,7 @@
     if (window.Chart && data && data.totals) {
       const ctx = document.getElementById('cn-summary-chart');
       if (ctx) {
+        try { if (ctx instanceof HTMLCanvasElement) { ctx.width = 360; ctx.height = 220; } } catch {}
         new window.Chart(ctx, {
           type: 'doughnut',
           data: {
@@ -61,13 +62,13 @@
                 backgroundColor: ['#12f0a1', '#ff5c8a', '#ffd166', '#9aa0aa'],
                 borderColor: ['rgba(18,240,161,0.6)','rgba(255,92,138,0.6)','rgba(255,209,102,0.6)','rgba(154,160,170,0.6)'],
                 borderWidth: 2,
-                hoverOffset: 8,
+                hoverOffset: 0,
               },
             ],
           },
           options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: false,
+            maintainAspectRatio: true,
             cutout: '60%',
             animation: false,
             plugins: {
