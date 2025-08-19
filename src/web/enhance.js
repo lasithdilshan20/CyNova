@@ -69,6 +69,7 @@
             responsive: true,
             maintainAspectRatio: false,
             cutout: '60%',
+            animation: false,
             plugins: {
               legend: { labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted') } },
               tooltip: { enabled: true },
@@ -537,14 +538,9 @@
       } catch {}
     })();
 
-    // Pinch-to-zoom for chart
+    // Pinch-to-zoom for chart (disabled to prevent unintended scaling/growth)
     (function pinchZoom(){
-      try {
-        const wrap = document.getElementById('chartWrap'); if (!wrap) return;
-        let startDist=0, base=1;
-        wrap.addEventListener('touchstart', (e)=>{ if (e.touches.length===2){ const a=e.touches[0], b=e.touches[1]; startDist = Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY); base = Number(wrap.getAttribute('data-scale')||1); } }, { passive: true });
-        wrap.addEventListener('touchmove', (e)=>{ if (e.touches.length===2){ const a=e.touches[0], b=e.touches[1]; const dist = Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY); const scale = Math.max(0.6, Math.min(2.0, base * (dist / (startDist||1)))); wrap.style.transform = `scale(${scale})`; wrap.style.transformOrigin = 'center'; wrap.setAttribute('data-scale', String(scale)); } }, { passive: true });
-      } catch {}
+      /* intentionally disabled */
     })();
 
     // Constellation network

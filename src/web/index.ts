@@ -63,7 +63,7 @@ function render(run: any) {
   // Header
   const header = el('header', { className: 'holo-header glass tilt reveal' });
   const brand = el('div', { className: 'cn-brand' });
-  const title = el('h1', { className: 'holo-title typewriter', text: 'CyNova – Sci‑Fi Test Dashboard' });
+  const title = el('h1', { className: 'holo-title', text: 'CyNova – Sci‑Fi Test Dashboard' });
   brand.appendChild(el('div', { className: 'cn-logo', text: '✦' }));
   brand.appendChild(el('div', { className: 'cn-title' }));
   (brand.lastChild as HTMLElement).appendChild(title);
