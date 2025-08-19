@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CyNova Report</title>
+    <style>{{{inlineCss}}}</style>
+  </head>
+  <body>
+    <header class="cn-header glass">
+      <div class="cn-brand">
+        <div class="cn-logo">⚡</div>
+        <div class="cn-title">
+          <h1>CyNova</h1>
+          <div class="cn-sub">Cypress Report • {{generatedAt}}</div>
+        </div>
+      </div>
+      <div class="cn-actions">
+        <span id="liveBadge" class="pill" title="Live status">LIVE: off</span>
+        <span id="liveCount" class="pill" title="Live events received">0</span>
+        <button id="themeToggle" class="btn neumorph" aria-label="Toggle theme">🌓</button>
+      </div>
+    </header>
+
+    <main class="cn-container">
+      <section class="cn-grid">
+        <article class="card glass">
+          <header class="card-h">
+            <h2>Run Summary</h2>
+          </header>
+          <div class="card-b">
+            <div class="summary-kpis">
+              <div class="kpi">
+                <div class="kpi-label">Tests</div>
+                <div class="kpi-value">{{totals.tests}}</div>
+              </div>
+              <div class="kpi kpi-pass">
+                <div class="kpi-label">Passed</div>
+                <div class="kpi-value">{{totals.passed}}</div>
+              </div>
+              <div class="kpi kpi-fail">
+                <div class="kpi-label">Failed</div>
+                <div class="kpi-value">{{totals.failed}}</div>
+              </div>
+              <div class="kpi kpi-skip">
+                <div class="kpi-label">Skipped</div>
+                <div class="kpi-value">{{totals.skipped}}</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Duration</div>
+                <div class="kpi-value">{{totals.durationMs}} ms</div>
+              </div>
+            </div>
+            <canvas id="cn-summary-chart" height="120" aria-label="Summary chart"></canvas>
+            <noscript><p class="muted">Charts and search require JavaScript. All data is visible below.</p></noscript>
+          </div>
+        </article>
+
+        <article class="card glass">
+          <header class="card-h">
+            <h2>Filter & Search</h2>
+          </header>
+          <div class="card-b cn-controls">
+            <div class="controls-row">
+              <fieldset class="filters" role="radiogroup" aria-label="Status filter">
+                <label><input type="radio" name="status" value="all" checked /> All</label>
+                <label><input type="radio" name="status" value="passed" /> Passed</label>
+                <label><input type="radio" name="status" value="failed" /> Failed</label>
+                <label><input type="radio" name="status" value="pending" /> Pending</label>
+                <label><input type="radio" name="status" value="skipped" /> Skipped</label>
+              </fieldset>
+              <input id="searchBox" class="input" placeholder="Search specs or tests…" aria-label="Search" />
+            </div>
+            <div class="controls-row">
+              <label>Duration ms:
+                <input id="durMin" type="number" class="input" placeholder="min" aria-label="Min duration" style="width: 7rem;" />
+                <input id="durMax" type="number" class="input" placeholder="max" aria-label="Max duration" style="width: 7rem; margin-left: 6px;" />
+              </label>
+              <input id="tagsBox" class="input" placeholder="Tags (comma separated)" aria-label="Tags filter" />
+              <label>Browser:
+                <select id="browserSelect" class="input" aria-label="Browser filter">
+                  <option value="all">All</option>
+                  {{#if browser.name}}
+                  <option value="{{browser.name}}" selected>{{browser.name}}</option>
+                  {{/if}}
+                </select>
+              </label>
+            </div>
+            <div class="controls-row">
+              <div class="btn-group">
+                <button id="expandAll" class="btn neumorph" title="Expand all">Expand All</button>
+                <button id="collapseAll" class="btn neumorph" title="Collapse all">Collapse All</button>
+              </div>
+              <div class="btn-group" style="margin-left: auto;">
+                <button id="exportJson" class="btn neumorph" title="Download JSON">Export JSON</button>
+                <button id="exportCsv" class="btn neumorph" title="Download CSV">Export CSV</button>
+                <button id="exportPdf" class="btn neumorph" title="Print to PDF">Export PDF</button>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="card glass">
+        <header class="card-h">
+          <h2>Specs & Tests</h2>
+        </header>
+        <div class="card-b">
+          {{#if specs}}
+          <ul id="specList" class="spec-list">
+            {{#each specs}}
+            <li class="spec" data-spec="{{specRelative}}">
+              <div class="spec-h">
+                <div class="spec-name">{{specRelative}}</div>
+                <div class="spec-meta">Tests: {{tests.length}} • Duration: {{durationMs}} ms</div>
+              </div>
+              <ul class="tests">
+                {{#each tests}}
+                <li class="test state-{{state}}" data-state="{{state}}" data-duration="{{wallClockDurationMs}}" data-test-id="{{id}}">
+                  <div class="test-title">{{displayTitle}}</div>
+                  <div class="test-actions">
+                    <button class="btn neumorph media-btn" title="View media" aria-label="View media">Media</button>
+                    <div class="test-state pill">{{state}}</div>
+                  </div>
+                </li>
+                {{/each}}
+              </ul>
+            </li>
+            {{/each}}
+          </ul>
+          {{else}}
+          <p class="muted">No spec details available in this report.</p>
+          {{/if}}
+        </div>
+      </section>
+
+      <section class="card glass">
+        <header class="card-h">
+          <h2>Analytics</h2>
+        </header>
+        <div class="card-b">
+          <div class="cn-grid">
+            <article class="card glass">
+              <header class="card-h"><h3>Flaky Tests</h3></header>
+              <div class="card-b">
+                {{#if analytics.flakyTests}}
+                <ul id="flakyList" class="spec-list">
+                  {{#each analytics.flakyTests}}
+                    <li class="spec">
+                      <div class="spec-h">
+                        <div class="spec-name">{{displayTitle}} <span class="pill">{{flakyScore}}</span></div>
+                        <div class="spec-meta">{{specRelative}} • P: {{passCount}} F: {{failCount}} • Runs: {{totalRuns}}</div>
+                      </div>
+                    </li>
+                  {{/each}}
+                </ul>
+                {{else}}
+                <p class="muted">No flaky tests detected.</p>
+                {{/if}}
+              </div>
+            </article>
+            <article class="card glass">
+              <header class="card-h"><h3>Duration Outliers</h3></header>
+              <div class="card-b">
+                {{#if analytics.durationOutliers}}
+                <ul id="outlierList" class="spec-list">
+                  {{#each analytics.durationOutliers}}
+                    <li class="spec">
+                      <div class="spec-h">
+                        <div class="spec-name">{{displayTitle}}</div>
+                        <div class="spec-meta">{{specRelative}} • {{durationMs}} ms • z={{zScore}}</div>
+                      </div>
+                    </li>
+                  {{/each}}
+                </ul>
+                {{else}}
+                <p class="muted">No duration outliers detected.</p>
+                {{/if}}
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+      <section class="card glass">
+        <header class="card-h">
+          <h2>Visualizations</h2>
+        </header>
+        <div class="card-b">
+          <div class="cn-grid">
+            <article class="card glass">
+              <header class="card-h"><h3>Execution Timeline</h3></header>
+              <div class="card-b"><canvas id="cn-timeline-chart" height="140"></canvas></div>
+            </article>
+            <article class="card glass">
+              <header class="card-h"><h3>Pass Rate Trend</h3></header>
+              <div class="card-b"><canvas id="cn-passrate-chart" height="140"></canvas></div>
+            </article>
+            <article class="card glass">
+              <header class="card-h"><h3>Duration Histogram</h3></header>
+              <div class="card-b"><canvas id="cn-histogram-chart" height="140"></canvas></div>
+            </article>
+            <article class="card glass">
+              <header class="card-h"><h3>Browser Matrix</h3></header>
+              <div class="card-b"><canvas id="cn-browser-matrix" height="140"></canvas></div>
+            </article>
+            <article class="card glass">
+              <header class="card-h"><h3>Performance Trend</h3></header>
+              <div class="card-b"><canvas id="cn-performance-chart" height="140"></canvas></div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="cn-footer">
+      <div>Generated by CyNova {{version}}</div>
+    </footer>
+
+    <script>{{{chartJs}}}</script>
+    <script>window.__CYNOVA__ = {{json this}};</script>
+    <script>{{{inlineJs}}}</script>
+  </body>
+</html>
